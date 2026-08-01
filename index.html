@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>SNAKE</title>
+<style>
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+  }
+
+  html, body {
+    height: 100%;
+    background: #8fa876;
+    overflow: hidden;
+    font-family: 'Courier New', monospace;
+  }
+
+  body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    touch-action: none;
+  }
+
+  .phone {
+    width: 100%;
+    max-width: 380px;
+    height: 100%;
+    max-height: 720px;
+    background: #4a5540;
+    border-radius: 24px;
+    padding: 18px 16px 24px 16px;
+    display: flex;
+    flex-direction: column;
+    box-shadow: inset 0 2px 4px rgba(255,255,255,0.1), 0 8px 24px rgba(0,0,0,0.4);
+  }
+
+  .brand {
+    text-align: center;
+    color: #c8d4b8;
+    font-size: 11px;
+    letter-spacing: 3px;
+    margin-bottom: 10px;
+    opacity: 0.7;
+  }
+
+  .screen-frame {
+    background: #3a4432;
+    border-radius: 8px;
+    padding: 10px;
+    box-shadow: inset 0 3px 8px rgba(0,0,0,0.6);
+    margin-bottom: 14px;
+  }
+
+  .screen {
+    background: #9bab7f;
+    border-radius: 3px;
+    aspect-ratio: 4 / 5;
+    position: relative;
+    overflow: hidden;
+    box-shadow: inset 0 0 20px rgba(0,0,0,0.25);
+  }
+
+  #gameCanvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+    image-rendering: pixelated;
+  }
+
+  .hud {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 8px;
+    font-size: 11px;
+    color: #2c3524;
+    font-weight: bold;
+    letter-spacing: 1px;
+    pointer-events: none;
+  }
+
+  .overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    color: #2c3524;
+    background: rgba(155, 171, 127, 0.94);
+    gap: 6px;
+    padding: 20px;
+  }
+
+  .overlay.hidden {
+    display: none;
+  }
+
+  .overlay h1 {
+    font-size: 22px;
+    letter-spacing: 4px;
+    margin-bottom: 4px;
+  }
+
+  .overlay p {
+    font-size: 12px;
+    line-height: 1.6;
+  }
+
+  .overlay .blink {
+    font-size: 12px;
+    margin-top: 10px;
+    animation: blink 1s steps(1) infinite;
+  }
+
+  @keyframes blink {
+    50% { opacity: 0; }
+  }
+
+  .controls {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  .dpad-row {
+    display: flex;
+    gap: 8px;
+  }
+
+  .btn {
+    width: 64px;
+    height: 64px;
+    background: linear-gradient(180deg, #6b7a5e, #565f45);
+    border: none;
+    border-radius: 10px;
+    color: #d8e0c8;
+    font-size: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 3px 0 #333b28, inset 0 1px 1px rgba(255,255,255,0.15);
+    -webkit-user-select: none;
+  }
+
+  .btn:active {
+    transform: translateY(2px);
+    box-shadow: 0 1px 0 #333b28, inset 0 1px 1px rgba(255,255,255,0.15);
+    background: linear-gradient(180deg, #565f45, #4a5340);
+  }
+
+  .btn.spacer {
+    background: transparent;
+    box-shadow: none;
+    pointer-events: none;
+  }
+
+  .bottom-row {
+    display: flex;
+    gap: 16px;
+    margin-top: 6px;
+  }
+
+  .btn-soft {
+    width: 90px;
+    height: 30px;
+    font-size: 10px;
+    letter-spacing: 1px;
+    border-radius: 15px;
+  }
+
+  .speaker {
+    display: flex;
+    justify-content: center;
+    gap: 4px;
+    margin-top: 10px;
+  }
+
+  .speaker span {
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: #2c3524;
+    opacity: 0.4;
+  }
+</style>
+</head>
+<body>
+
+<div class="phone">
+  <div class="brand">N O K I A S T Y L E &middot; 3310</div>
+
+  <div class="screen-frame">
+    <div class="screen">
+      <canvas id="gameCanvas"></canvas>
+      <div class="hud">
+        <span id="scoreDisplay">SCORE 000</span>
+        <span id="hiScoreDisplay">HI 000</span>
+      </div>
+      <div class="overlay" id="overlay">
+        <h1>SNAKE</h1>
+        <p>USE ARROWS<br>EAT THE DOTS<br>DON'T HIT YOURSELF</p>
+        <div class="blink">PRESS ● TO START</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <div class="dpad-row">
+      <button class="btn spacer"></button>
+      <button class="btn" id="btnUp">▲</button>
+      <button class="btn spacer"></button>
+    </div>
+    <div class="dpad-row">
+      <button class="btn" id="btnLeft">◀</button>
+      <button class="btn" id="btnAction">●</button>
+      <button class="btn" id="btnRight">▶</button>
+    </div>
+    <div class="dpad-row">
+      <button class="btn spacer"></button>
+      <button class="btn" id="btnDown">▼</button>
+      <button class="btn spacer"></button>
+    </div>
+  </div>
+
+  <div class="speaker">
+    <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+  </div>
+</div>
+
+<script>
+(function() {
+  const canvas = document.getElementById('gameCanvas');
+  const ctx = canvas.getContext('2d');
+  const scoreDisplay = document.getElementById('scoreDisplay');
+  const hiScoreDisplay = document.getElementById('hiScoreDisplay');
+  const overlay = document.getElementById('overlay');
+
+  const GRID_SIZE = 16;
+  let cellPx = 0;
+
+  // Monochrome LCD palette (dark pixels on light LCD green)
+  const COLOR_BG = '#9bab7f';
+  const COLOR_FG = '#2c3524';
+
+  let snake, dir, nextDir, food, score, hiScore, running, gameOver, tickMs, loopHandle;
+
+  function loadHiScore() {
+    try {
+      const v = localStorageSafe('get');
+      return v ? parseInt(v, 10) : 0;
+    } catch (e) { return 0; }
+  }
+
+  // Artifacts disallow localStorage; keep hi-score in memory only for this session.
+  let hiScoreMem = 0;
+  function localStorageSafe() { return null; }
+
+  function resizeCanvas() {
+    const rect = canvas.parentElement.getBoundingClientRect();
+    const size = Math.min(rect.width, rect.height);
+    canvas.width = size;
+    canvas.height = size;
+    cellPx = size / GRID_SIZE;
+    draw();
+  }
+
+  function resetGame() {
+    snake = [
+      { x: 8, y: 8 },
+      { x: 7, y: 8 },
+      { x: 6, y: 8 }
+    ];
+    dir = { x: 1, y: 0 };
+    nextDir = { x: 1, y: 0 };
+    score = 0;
+    tickMs = 180;
+    gameOver = false;
+    placeFood();
+    updateHud();
+  }
+
+  function placeFood() {
+    let valid = false;
+    while (!valid) {
+      food = {
+        x: Math.floor(Math.random() * GRID_SIZE),
+        y: Math.floor(Math.random() * GRID_SIZE)
+      };
+      valid = !snake.some(s => s.x === food.x && s.y === food.y);
+    }
+  }
+
+  function updateHud() {
+    scoreDisplay.textContent = 'SCORE ' + String(score).padStart(3, '0');
+    hiScoreDisplay.textContent = 'HI ' + String(hiScoreMem).padStart(3, '0');
+  }
+
+  function draw() {
+    // background
+    ctx.fillStyle = COLOR_BG;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // subtle grid dots (LCD pixel texture)
+    ctx.fillStyle = 'rgba(44,53,36,0.06)';
+    for (let x = 0; x < GRID_SIZE; x++) {
+      for (let y = 0; y < GRID_SIZE; y++) {
+        ctx.fillRect(x * cellPx, y * cellPx, cellPx - 0.5, cellPx - 0.5);
+      }
+    }
+
+    if (!snake) return;
+
+    // food
+    ctx.fillStyle = COLOR_FG;
+    const fpad = cellPx * 0.28;
+    ctx.fillRect(food.x * cellPx + fpad, food.y * cellPx + fpad, cellPx - fpad * 2, cellPx - fpad * 2);
+
+    // snake
+    snake.forEach((seg, i) => {
+      const pad = i === 0 ? cellPx * 0.06 : cellPx * 0.12;
+      ctx.fillStyle = COLOR_FG;
+      ctx.fillRect(seg.x * cellPx + pad, seg.y * cellPx + pad, cellPx - pad * 2, cellPx - pad * 2);
+    });
+  }
+
+  function tick() {
+    if (!running || gameOver) return;
+
+    dir = nextDir;
+    const head = { x: snake[0].x + dir.x, y: snake[0].y + dir.y };
+
+    // wall collision
+    if (head.x < 0 || head.x >= GRID_SIZE || head.y < 0 || head.y >= GRID_SIZE) {
+      return endGame();
+    }
+    // self collision
+    if (snake.some(s => s.x === head.x && s.y === head.y)) {
+      return endGame();
+    }
+
+    snake.unshift(head);
+
+    if (head.x === food.x && head.y === food.y) {
+      score += 10;
+      if (score > hiScoreMem) hiScoreMem = score;
+      updateHud();
+      placeFood();
+      if (tickMs > 80) tickMs -= 3;
+    } else {
+      snake.pop();
+    }
+
+    draw();
+    loopHandle = setTimeout(tick, tickMs);
+  }
+
+  function endGame() {
+    gameOver = true;
+    running = false;
+    overlay.classList.remove('hidden');
+    overlay.innerHTML =
+      '<h1>GAME OVER</h1>' +
+      '<p>SCORE ' + String(score).padStart(3, '0') + '<br>HI ' + String(hiScoreMem).padStart(3, '0') + '</p>' +
+      '<div class="blink">PRESS ● TO RETRY</div>';
+  }
+
+  function startGame() {
+    if (loopHandle) clearTimeout(loopHandle);
+    resetGame();
+    running = true;
+    overlay.classList.add('hidden');
+    draw();
+    loopHandle = setTimeout(tick, tickMs);
+  }
+
+  function handleAction() {
+    if (!running || gameOver) {
+      startGame();
+    }
+  }
+
+  function setDir(x, y) {
+    // prevent reversing directly into self
+    if (snake && snake.length > 1) {
+      if (dir.x === -x && dir.y === -y) return;
+    }
+    nextDir = { x, y };
+    if (!running && !gameOver) {
+      // first press also starts
+    }
+  }
+
+  // Button bindings
+  document.getElementById('btnUp').addEventListener('click', () => setDir(0, -1));
+  document.getElementById('btnDown').addEventListener('click', () => setDir(0, 1));
+  document.getElementById('btnLeft').addEventListener('click', () => setDir(-1, 0));
+  document.getElementById('btnRight').addEventListener('click', () => setDir(1, 0));
+  document.getElementById('btnAction').addEventListener('click', handleAction);
+
+  // prevent double-fire from touch + click on mobile
+  ['btnUp','btnDown','btnLeft','btnRight','btnAction'].forEach(id => {
+    const el = document.getElementById(id);
+    el.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      el.click();
+    }, { passive: false });
+  });
+
+  // Keyboard support (desktop testing)
+  window.addEventListener('keydown', (e) => {
+    switch (e.key) {
+      case 'ArrowUp': setDir(0, -1); e.preventDefault(); break;
+      case 'ArrowDown': setDir(0, 1); e.preventDefault(); break;
+      case 'ArrowLeft': setDir(-1, 0); e.preventDefault(); break;
+      case 'ArrowRight': setDir(1, 0); e.preventDefault(); break;
+      case ' ': case 'Enter': handleAction(); e.preventDefault(); break;
+    }
+  });
+
+  window.addEventListener('resize', resizeCanvas);
+
+  // init
+  resetGame();
+  hiScoreMem = 0;
+  updateHud();
+  resizeCanvas();
+  running = false;
+})();
+</script>
+
+</body>
+</html>
